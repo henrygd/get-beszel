@@ -15,7 +15,7 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
-const validPaths = new Set(['', 'hub']);
+const validPaths = new Set(['', 'hub', 'brew']);
 
 async function handleRequest(request: Request): Promise<Response> {
 	// Return 404 if not root url
@@ -30,6 +30,9 @@ async function handleRequest(request: Request): Promise<Response> {
 	if (path === 'hub') {
 		// Return hub script if url is hub
 		resource = 'install-hub.sh';
+	} else if (path === 'brew') {
+		// Return brew script if url is brew
+		resource = 'install-agent-brew.sh';
 	} else {
 		// Return Windows script if user agent includes powershell
 		const userAgent = request.headers.get('User-Agent')?.toLowerCase() || '';
