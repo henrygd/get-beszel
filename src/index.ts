@@ -15,7 +15,7 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
-const validPaths = new Set(['', 'hub', 'brew']);
+const validPaths = new Set(['', 'hub', 'brew', 'windows']);
 
 async function handleRequest(request: Request): Promise<Response> {
 	// Return 404 if not root url
@@ -36,7 +36,7 @@ async function handleRequest(request: Request): Promise<Response> {
 	} else {
 		// Return Windows script if user agent includes powershell
 		const userAgent = request.headers.get('User-Agent')?.toLowerCase() || '';
-		if (userAgent.includes('powershell')) {
+		if (path === 'windows' || userAgent.includes('powershell')) {
 			resource = 'install-agent.ps1';
 		}
 	}
@@ -45,7 +45,12 @@ async function handleRequest(request: Request): Promise<Response> {
 
 	try {
 		// Fetch the script from the external URL
-		const externalResponse = await fetch(originScriptUrl);
+		const externalResponse = await fetch(originScriptUrl, {
+			cf: {
+				cacheTtl: 600, // cache for 10 minutes
+				cacheKey: resource,
+			},
+		});
 
 		// Create new headers, removing Content-Disposition and setting Content-Type
 		const newHeaders = new Headers();
