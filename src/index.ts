@@ -15,11 +15,12 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
-const validPaths = new Set(['', 'hub', 'brew', 'windows']);
+const validPaths = new Set(['/', '/hub', '/brew', '/windows']);
 
 async function handleRequest(request: Request): Promise<Response> {
+	const url = new URL(request.url);
+	const path = url.pathname
 	// Return 404 if not root url
-	const path = request.url.split('/').pop() ?? '';
 	if (!validPaths.has(path)) {
 		return new Response('Not Found', { status: 404 });
 	}
@@ -27,18 +28,24 @@ async function handleRequest(request: Request): Promise<Response> {
 	// Get user agent and determine script URL (default is agent linux script)
 	let resource = 'install-agent.sh';
 
-	if (path === 'hub') {
-		// Return hub script if url is hub
+	if (path === '/hub') {
+		// Return hub script if url is hu
 		resource = 'install-hub.sh';
-	} else if (path === 'brew') {
+	} else if (path === '/brew') {
 		// Return brew script if url is brew
-		resource = 'install-agent-brew.sh';
+		resource = 'install-agent-brew.sh'
 	} else {
 		// Return Windows script if user agent includes powershell
 		const userAgent = request.headers.get('User-Agent')?.toLowerCase() || '';
-		if (path === 'windows' || userAgent.includes('powershell')) {
+		if (path === '/windows' || userAgent.includes('powershell')) {
 			resource = 'install-agent.ps1';
 		}
+	}
+	
+	// Change resource to beta script if beta param is present
+	const beta = url.searchParams.get('beta')
+	if (beta === '1' || beta === 'true') {
+		resource = resource.replace('.', '-beta.');
 	}
 
 	const originScriptUrl = `https://raw.githubusercontent.com/henrygd/beszel/main/supplemental/scripts/${resource}`;
