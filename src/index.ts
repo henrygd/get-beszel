@@ -15,11 +15,11 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
-const validPaths = new Set(['/', '/hub', '/brew', '/windows']);
+const validPaths = new Set(['/', '/hub', '/brew', '/windows', '/upgrade', '/upgrade-wrapper']);
 
 async function handleRequest(request: Request): Promise<Response> {
 	const url = new URL(request.url);
-	const path = url.pathname
+	const path = url.pathname;
 	// Return 404 if not root url
 	if (!validPaths.has(path)) {
 		return new Response('Not Found', { status: 404 });
@@ -33,20 +33,29 @@ async function handleRequest(request: Request): Promise<Response> {
 		resource = 'install-hub.sh';
 	} else if (path === '/brew') {
 		// Return brew script if url is brew
-		resource = 'install-agent-brew.sh'
+		resource = 'install-agent-brew.sh';
+	} else if (path === '/windows') {
+		// Return Windows script if url is windows
+		resource = 'install-agent.ps1';
+	} else if (path === '/upgrade') {
+		// Return upgrade script if url is upgrade (only for Windows)
+		resource = 'upgrade-agent.ps1';
+	} else if (path === '/upgrade-wrapper') {
+		// Return upgrade wrapper script if url is upgrade-wrapper (only for Windows)
+		resource = 'upgrade-agent-wrapper.ps1';
 	} else {
-		// Return Windows script if user agent includes powershell
+		// Return Windows install script if user agent includes powershell
 		const userAgent = request.headers.get('User-Agent')?.toLowerCase() || '';
-		if (path === '/windows' || userAgent.includes('powershell')) {
+		if (userAgent.includes('powershell')) {
 			resource = 'install-agent.ps1';
 		}
 	}
-	
+
 	// Change resource to beta script if beta param is present
-	const beta = url.searchParams.get('beta')
-	if (beta === '1' || beta === 'true') {
-		resource = resource.replace('.', '-beta.');
-	}
+	// const beta = url.searchParams.get('beta');
+	// if (beta === '1' || beta === 'true') {
+	// 	resource = resource.replace('.', '-beta.');
+	// }
 
 	const originScriptUrl = `https://raw.githubusercontent.com/henrygd/beszel/main/supplemental/scripts/${resource}`;
 
