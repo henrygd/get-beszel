@@ -9,45 +9,60 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { getVersion } from "./getVersion";
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		return handleRequest(request);
 	},
 } satisfies ExportedHandler<Env>;
 
-const validPaths = new Set(['/', '/hub', '/brew', '/windows', '/upgrade', '/upgrade-wrapper']);
+const validPaths = new Set([
+	"/",
+	"/hub",
+	"/brew",
+	"/windows",
+	"/upgrade",
+	"/upgrade-wrapper",
+	"/latest-version",
+]);
 
 async function handleRequest(request: Request): Promise<Response> {
 	const url = new URL(request.url);
 	const path = url.pathname;
 	// Return 404 if not root url
 	if (!validPaths.has(path)) {
-		return new Response('Not Found', { status: 404 });
+		return new Response("Not Found", { status: 404 });
 	}
 
 	// Get user agent and determine script URL (default is agent linux script)
-	let resource = 'install-agent.sh';
+	let resource = "install-agent.sh";
 
-	if (path === '/hub') {
+	// handle latest version
+	if (path === "/latest-version") {
+		return await getVersion();
+	}
+
+	if (path === "/hub") {
 		// Return hub script if url is hu
-		resource = 'install-hub.sh';
-	} else if (path === '/brew') {
+		resource = "install-hub.sh";
+	} else if (path === "/brew") {
 		// Return brew script if url is brew
-		resource = 'install-agent-brew.sh';
-	} else if (path === '/windows') {
+		resource = "install-agent-brew.sh";
+	} else if (path === "/windows") {
 		// Return Windows script if url is windows
-		resource = 'install-agent.ps1';
-	} else if (path === '/upgrade') {
+		resource = "install-agent.ps1";
+	} else if (path === "/upgrade") {
 		// Return upgrade script if url is upgrade (only for Windows)
-		resource = 'upgrade-agent.ps1';
-	} else if (path === '/upgrade-wrapper') {
+		resource = "upgrade-agent.ps1";
+	} else if (path === "/upgrade-wrapper") {
 		// Return upgrade wrapper script if url is upgrade-wrapper (only for Windows)
-		resource = 'upgrade-agent-wrapper.ps1';
+		resource = "upgrade-agent-wrapper.ps1";
 	} else {
 		// Return Windows install script if user agent includes powershell
-		const userAgent = request.headers.get('User-Agent')?.toLowerCase() || '';
-		if (userAgent.includes('powershell')) {
-			resource = 'install-agent.ps1';
+		const userAgent = request.headers.get("User-Agent")?.toLowerCase() || "";
+		if (userAgent.includes("powershell")) {
+			resource = "install-agent.ps1";
 		}
 	}
 
@@ -71,12 +86,12 @@ async function handleRequest(request: Request): Promise<Response> {
 		// Create new headers, removing Content-Disposition and setting Content-Type
 		const newHeaders = new Headers();
 		for (const [key, value] of externalResponse.headers) {
-			if (key.toLowerCase() !== 'content-disposition') {
+			if (key.toLowerCase() !== "content-disposition") {
 				newHeaders.set(key, value);
-				newHeaders.set('Cache-Control', 'public, max-age=600');
+				newHeaders.set("Cache-Control", "public, max-age=600");
 			}
 		}
-		newHeaders.set('Content-Type', 'text/plain');
+		newHeaders.set("Content-Type", "text/plain");
 
 		// Return the response with modified headers
 		const response = new Response(externalResponse.body, {
@@ -89,7 +104,7 @@ async function handleRequest(request: Request): Promise<Response> {
 		});
 
 		return response;
-	} catch (error) {
-		return new Response('Error fetching script', { status: 500 });
+	} catch (_error) {
+		return new Response("Error fetching script", { status: 500 });
 	}
 }
