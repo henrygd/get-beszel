@@ -1,6 +1,6 @@
 export async function getVersion(): Promise<Response> {
 	const url = 'https://api.github.com/repos/henrygd/beszel/releases/latest';
-	let latestVersion = '0.12.12';
+	let latestVersion = '0.18.3';
 
 	const response = await fetch(url, {
 		headers: {
