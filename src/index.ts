@@ -78,8 +78,8 @@ async function handleRequest(request: Request): Promise<Response> {
 		// Fetch the script from the external URL
 		const externalResponse = await fetch(originScriptUrl, {
 			cf: {
-				cacheTtl: 600, // cache for 10 minutes
-				cacheKey: resource,
+				cacheTtl: 300, // cache for 5 minutes
+				cacheKey: originScriptUrl,
 			},
 		});
 
@@ -88,19 +88,16 @@ async function handleRequest(request: Request): Promise<Response> {
 		for (const [key, value] of externalResponse.headers) {
 			if (key.toLowerCase() !== "content-disposition") {
 				newHeaders.set(key, value);
-				newHeaders.set("Cache-Control", "public, max-age=600");
 			}
 		}
 		newHeaders.set("Content-Type", "text/plain");
+		newHeaders.set("Cache-Control", "public, max-age=300");
 
 		// Return the response with modified headers
 		const response = new Response(externalResponse.body, {
 			status: externalResponse.status,
 			statusText: externalResponse.statusText,
 			headers: newHeaders,
-			cf: {
-				cacheTtl: 600, // cache for 10 minutes
-			},
 		});
 
 		return response;
