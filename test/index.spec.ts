@@ -127,9 +127,13 @@ describe("getVersion (mocked)", () => {
 	afterAll(() => fetchMock.deactivate());
 
 	it("strips v prefix and returns long cache-control on success", async () => {
+		// fetchMock
+		// 	.get("https://api.github.com")
+		// 	.intercept({ path: "/repos/henrygd/beszel/releases/latest" })
+		// 	.reply(200, JSON.stringify({ tag_name: "v9.9.9" }));
 		fetchMock
-			.get("https://api.github.com")
-			.intercept({ path: "/repos/henrygd/beszel/releases/latest" })
+			.get("https://gh.beszel.dev")
+			.intercept({ path: "/repos/henrygd/beszel/releases/latest?api=true" })
 			.reply(200, JSON.stringify({ tag_name: "v9.9.9" }));
 
 		const req = new IncomingRequest("https://get.beszel.dev/latest-version");
@@ -142,9 +146,13 @@ describe("getVersion (mocked)", () => {
 	});
 
 	it("returns fallback version and short cache-control when API returns error", async () => {
+		// fetchMock
+		// 	.get("https://api.github.com")
+		// 	.intercept({ path: "/repos/henrygd/beszel/releases/latest" })
+		// 	.reply(500, "Internal Server Error");
 		fetchMock
-			.get("https://api.github.com")
-			.intercept({ path: "/repos/henrygd/beszel/releases/latest" })
+			.get("https://gh.beszel.dev")
+			.intercept({ path: "/repos/henrygd/beszel/releases/latest?api=true" })
 			.reply(500, "Internal Server Error");
 
 		const req = new IncomingRequest("https://get.beszel.dev/latest-version");
@@ -157,9 +165,13 @@ describe("getVersion (mocked)", () => {
 	});
 
 	it("returns fallback version and short cache-control on network failure", async () => {
+		// fetchMock
+		// 	.get("https://api.github.com")
+		// 	.intercept({ path: "/repos/henrygd/beszel/releases/latest" })
+		// 	.replyWithError(new Error("Network failure"));
 		fetchMock
-			.get("https://api.github.com")
-			.intercept({ path: "/repos/henrygd/beszel/releases/latest" })
+			.get("https://gh.beszel.dev")
+			.intercept({ path: "/repos/henrygd/beszel/releases/latest?api=true" })
 			.replyWithError(new Error("Network failure"));
 
 		const req = new IncomingRequest("https://get.beszel.dev/latest-version");
