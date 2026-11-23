@@ -10,7 +10,7 @@ export async function getVersion(): Promise<Response> {
 	// const url = "https://api.github.com/repos/henrygd/beszel/releases/latest";
 	const url =
 		"https://gh.beszel.dev/repos/henrygd/beszel/releases/latest?api=true";
-	let latestVersion = "0.18.6";
+	let latestVersion = "0.21.2";
 	let success = false;
 
 	try {
