@@ -9,11 +9,12 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
-import { getVersion } from "./getVersion";
+import { handleDownload, isDownloadPath } from "./download";
+import { getReleaseJson, getVersion } from "./release";
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
-		return handleRequest(request);
+		return handleRequest(request, env, ctx);
 	},
 } satisfies ExportedHandler<Env>;
 
@@ -27,9 +28,24 @@ const validPaths = new Set([
 	"/latest-version",
 ]);
 
-async function handleRequest(request: Request): Promise<Response> {
+async function handleRequest(
+	request: Request,
+	env: Env,
+	ctx: ExecutionContext,
+): Promise<Response> {
 	const url = new URL(request.url);
 	const path = url.pathname;
+
+	// Release asset mirror (github.com download path layout)
+	if (isDownloadPath(path)) {
+		return handleDownload(request, env, ctx);
+	}
+
+	// GitHub API latest release passthrough (used by updater --china-mirrors)
+	if (path === "/repos/henrygd/beszel/releases/latest") {
+		return getReleaseJson();
+	}
+
 	// Return 404 if not root url
 	if (!validPaths.has(path)) {
 		return new Response("Not Found", { status: 404 });

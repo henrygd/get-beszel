@@ -9,7 +9,14 @@
 	"compatibility_date": "2025-04-07",
 	"observability": {
 		"enabled": true
-	}
+	},
+	"routes": [
+		{ "pattern": "get.beszel.dev", "custom_domain": true },
+		{ "pattern": "gh.beszel.dev", "custom_domain": true }
+	],
+	"r2_buckets": [
+		{ "binding": "RELEASES", "bucket_name": "beszel-releases" }
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
