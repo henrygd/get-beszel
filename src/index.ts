@@ -48,12 +48,12 @@ async function handleRequest(
 
 	// Latest release asset: redirects to the versioned download path
 	if (isLatestDownloadPath(path)) {
-		return handleLatestDownload(request);
+		return handleLatestDownload(request, env);
 	}
 
 	// GitHub API latest release passthrough (used by updater --china-mirrors)
 	if (path === "/repos/henrygd/beszel/releases/latest") {
-		return getReleaseJson();
+		return getReleaseJson(env);
 	}
 
 	// Return 404 if not root url
@@ -66,7 +66,7 @@ async function handleRequest(
 
 	// handle latest version
 	if (path === "/latest-version") {
-		return await getVersion();
+		return await getVersion(env);
 	}
 
 	if (path === "/hub") {

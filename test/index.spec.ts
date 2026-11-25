@@ -130,10 +130,10 @@ const RELEASE_CACHE_KEY = "https://get.beszel.dev/__cache/latest-release";
 const GH_API = "https://api.github.com";
 const GH_API_PATH = "/repos/henrygd/beszel/releases/latest";
 
-async function get(url: string, init?: RequestInit) {
+async function get(url: string, init?: RequestInit, testEnv: Env = env) {
 	const req = new IncomingRequest(url, init);
 	const ctx = createExecutionContext();
-	const res = await worker.fetch(req, env, ctx);
+	const res = await worker.fetch(req, testEnv, ctx);
 	await waitOnExecutionContext(ctx);
 	return res;
 }
@@ -202,6 +202,39 @@ describe("mocked upstream", () => {
 				.reply(200, JSON.stringify({ tag_name: "v1.2.3" }));
 			const res = await get("https://get.beszel.dev/latest-version");
 			expect(await res.text()).toBe("1.2.3");
+		});
+	});
+
+	// ─── GitHub token ───
+
+	describe("GITHUB_TOKEN", () => {
+		it("sends the token to the GitHub API when set", async () => {
+			fetchMock
+				.get(GH_API)
+				.intercept({
+					path: GH_API_PATH,
+					headers: { authorization: "Bearer test-token" },
+				})
+				.reply(200, JSON.stringify({ tag_name: "v9.9.9" }));
+
+			const res = await get("https://get.beszel.dev/latest-version", undefined, {
+				...env,
+				GITHUB_TOKEN: "test-token",
+			});
+			expect(await res.text()).toBe("9.9.9");
+		});
+
+		it("sends no authorization header when unset", async () => {
+			fetchMock
+				.get(GH_API)
+				.intercept({
+					path: GH_API_PATH,
+					headers: (headers) => !("authorization" in headers),
+				})
+				.reply(200, JSON.stringify({ tag_name: "v9.9.9" }));
+
+			const res = await get("https://get.beszel.dev/latest-version");
+			expect(await res.text()).toBe("9.9.9");
 		});
 	});
 
