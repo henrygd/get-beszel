@@ -9,7 +9,12 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
-import { handleDownload, isDownloadPath } from "./download";
+import {
+	handleDownload,
+	handleLatestDownload,
+	isDownloadPath,
+	isLatestDownloadPath,
+} from "./download";
 import { getReleaseJson, getVersion } from "./release";
 
 export default {
@@ -39,6 +44,11 @@ async function handleRequest(
 	// Release asset mirror (github.com download path layout)
 	if (isDownloadPath(path)) {
 		return handleDownload(request, env, ctx);
+	}
+
+	// Latest release asset: redirects to the versioned download path
+	if (isLatestDownloadPath(path)) {
+		return handleLatestDownload(request);
 	}
 
 	// GitHub API latest release passthrough (used by updater --china-mirrors)

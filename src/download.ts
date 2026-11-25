@@ -10,7 +10,11 @@
  * immutable, so stored objects never need invalidating.
  */
 
+import { getLatestTag } from "./release";
+
 const DOWNLOAD_PATH = /^\/henrygd\/beszel\/releases\/download\/([^/]+)\/([^/]+)$/;
+const LATEST_DOWNLOAD_PATH =
+	/^\/henrygd\/beszel\/releases\/latest\/download\/([^/]+)$/;
 const VALID_TAG = /^v\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$/;
 const VALID_FILES = [
 	/^beszel(-agent)?_[a-z0-9._]+\.(tar\.gz|zip|deb)$/,
@@ -21,6 +25,21 @@ const RESPONSE_CACHE_CONTROL = "public, max-age=86400";
 
 export function isDownloadPath(path: string): boolean {
 	return DOWNLOAD_PATH.test(path);
+}
+
+export function isLatestDownloadPath(path: string): boolean {
+	return LATEST_DOWNLOAD_PATH.test(path);
+}
+
+function isValidFile(file: string): boolean {
+	return VALID_FILES.some((re) => re.test(file));
+}
+
+function methodNotAllowed(): Response {
+	return new Response("Method Not Allowed", {
+		status: 405,
+		headers: { allow: "GET, HEAD" },
+	});
 }
 
 function contentType(file: string): string {
@@ -60,10 +79,7 @@ export async function handleDownload(
 	ctx: ExecutionContext,
 ): Promise<Response> {
 	if (request.method !== "GET" && request.method !== "HEAD") {
-		return new Response("Method Not Allowed", {
-			status: 405,
-			headers: { allow: "GET, HEAD" },
-		});
+		return methodNotAllowed();
 	}
 
 	const match = DOWNLOAD_PATH.exec(new URL(request.url).pathname);
@@ -71,7 +87,7 @@ export async function handleDownload(
 		return notFound();
 	}
 	const [, tag, file] = match;
-	if (!VALID_TAG.test(tag) || !VALID_FILES.some((re) => re.test(file))) {
+	if (!VALID_TAG.test(tag) || !isValidFile(file)) {
 		return notFound();
 	}
 
@@ -144,4 +160,43 @@ export async function handleDownload(
 	);
 
 	return new Response(clientBody, { headers });
+}
+
+/**
+ * GET /henrygd/beszel/releases/latest/download/<file>
+ *
+ * Like github.com, redirects to the asset in the latest release, so the
+ * download itself is served (and stored in R2) under its versioned path.
+ * Used by the hub install script with --mirror.
+ */
+export async function handleLatestDownload(request: Request): Promise<Response> {
+	if (request.method !== "GET" && request.method !== "HEAD") {
+		return methodNotAllowed();
+	}
+
+	const url = new URL(request.url);
+	const match = LATEST_DOWNLOAD_PATH.exec(url.pathname);
+	if (!match || !isValidFile(match[1])) {
+		return notFound();
+	}
+
+	const tag = await getLatestTag();
+	if (!tag || !VALID_TAG.test(tag)) {
+		return new Response("Failed to fetch latest release", {
+			status: 502,
+			headers: { "Cache-Control": "no-store" },
+		});
+	}
+
+	const location = new URL(
+		`/henrygd/beszel/releases/download/${tag}/${match[1]}`,
+		url,
+	);
+	return new Response(null, {
+		status: 302,
+		headers: {
+			location: location.toString(),
+			"Cache-Control": "public, max-age=300",
+		},
+	});
 }

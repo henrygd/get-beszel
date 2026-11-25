@@ -53,6 +53,12 @@ async function getLatestRelease(): Promise<string | null> {
 	}
 }
 
+/** Returns the latest release tag (e.g. "v0.21.2"), or null if it could not be fetched. */
+export async function getLatestTag(): Promise<string | null> {
+	const body = await getLatestRelease();
+	return body ? (JSON.parse(body) as { tag_name: string }).tag_name : null;
+}
+
 /** GET /latest-version: the latest version number without the "v" prefix. */
 export async function getVersion(): Promise<Response> {
 	const body = await getLatestRelease();

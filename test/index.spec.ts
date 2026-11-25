@@ -323,4 +323,67 @@ describe("mocked upstream", () => {
 			expect(res.status).toBe(502);
 		});
 	});
+
+	// ─── Latest release downloads ───
+
+	describe("latest release downloads", () => {
+		const FILE = "beszel_linux_amd64.tar.gz";
+		const LATEST_PATH = `/henrygd/beszel/releases/latest/download/${FILE}`;
+
+		it("redirects to the versioned download path of the latest release", async () => {
+			fetchMock
+				.get(GH_API)
+				.intercept({ path: GH_API_PATH })
+				.reply(200, JSON.stringify({ tag_name: "v9.9.9" }));
+
+			const res = await get(`https://gh.beszel.dev${LATEST_PATH}`, {
+				redirect: "manual",
+			});
+			expect(res.status).toBe(302);
+			expect(res.headers.get("location")).toBe(
+				`https://gh.beszel.dev/henrygd/beszel/releases/download/v9.9.9/${FILE}`,
+			);
+			expect(res.headers.get("cache-control")).toBe("public, max-age=300");
+		});
+
+		it("supports HEAD", async () => {
+			fetchMock
+				.get(GH_API)
+				.intercept({ path: GH_API_PATH })
+				.reply(200, JSON.stringify({ tag_name: "v9.9.9" }));
+
+			const res = await get(`https://gh.beszel.dev${LATEST_PATH}`, {
+				method: "HEAD",
+				redirect: "manual",
+			});
+			expect(res.status).toBe(302);
+		});
+
+		it.each([
+			"/henrygd/beszel/releases/latest/download/evil.sh",
+			`/henrygd/other/releases/latest/download/${FILE}`,
+			`/henrygd/beszel/releases/latest/download/${FILE}/extra`,
+		])("returns 404 without fetching for %s", async (path) => {
+			const res = await get(`https://gh.beszel.dev${path}`);
+			expect(res.status).toBe(404);
+		});
+
+		it("returns 502 when the latest release can't be fetched", async () => {
+			fetchMock
+				.get(GH_API)
+				.intercept({ path: GH_API_PATH })
+				.reply(500, "Internal Server Error");
+
+			const res = await get(`https://gh.beszel.dev${LATEST_PATH}`);
+			expect(res.status).toBe(502);
+			expect(res.headers.get("cache-control")).toBe("no-store");
+		});
+
+		it("rejects non-GET methods", async () => {
+			const res = await get(`https://gh.beszel.dev${LATEST_PATH}`, {
+				method: "POST",
+			});
+			expect(res.status).toBe(405);
+		});
+	});
 });
