@@ -169,7 +169,10 @@ export async function handleDownload(
  * download itself is served (and stored in R2) under its versioned path.
  * Used by the hub install script with --mirror.
  */
-export async function handleLatestDownload(request: Request): Promise<Response> {
+export async function handleLatestDownload(
+	request: Request,
+	env: Env,
+): Promise<Response> {
 	if (request.method !== "GET" && request.method !== "HEAD") {
 		return methodNotAllowed();
 	}
@@ -180,7 +183,7 @@ export async function handleLatestDownload(request: Request): Promise<Response> 
 		return notFound();
 	}
 
-	const tag = await getLatestTag();
+	const tag = await getLatestTag(env);
 	if (!tag || !VALID_TAG.test(tag)) {
 		return new Response("Failed to fetch latest release", {
 			status: 502,
