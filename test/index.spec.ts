@@ -118,7 +118,7 @@ describe("getVersion", () => {
 		const res = await worker.fetch(req, env, ctx);
 		await waitOnExecutionContext(ctx);
 		expect(res.status).toBe(200);
-		expect(res.headers.get("cache-control")).toBe("public, max-age=43200");
+		expect(res.headers.get("cache-control")).toBe("public, max-age=600");
 		expect(res.headers.get("content-type")).toBe("text/plain");
 		expect(await res.text()).toMatch(/^\d+\.\d+\.\d+$/);
 	});
@@ -152,7 +152,7 @@ describe("mocked upstream", () => {
 	// ─── /latest-version ───
 
 	describe("/latest-version", () => {
-		it("strips v prefix and caches for 12 hours on success", async () => {
+		it("strips v prefix and caches for 10 minutes on success", async () => {
 			fetchMock
 				.get(GH_API)
 				.intercept({ path: GH_API_PATH })
@@ -160,7 +160,7 @@ describe("mocked upstream", () => {
 
 			const res = await get("https://get.beszel.dev/latest-version");
 			expect(await res.text()).toBe("9.9.9");
-			expect(res.headers.get("cache-control")).toBe("public, max-age=43200");
+			expect(res.headers.get("cache-control")).toBe("public, max-age=600");
 
 			// second request is served from cache (no pending interceptor needed)
 			const res2 = await get("https://gh.beszel.dev/latest-version");
@@ -229,7 +229,7 @@ describe("mocked upstream", () => {
 			);
 			expect(res.status).toBe(200);
 			expect(res.headers.get("content-type")).toBe("application/json");
-			expect(res.headers.get("cache-control")).toBe("public, max-age=43200");
+			expect(res.headers.get("cache-control")).toBe("public, max-age=600");
 			expect(await res.json()).toEqual(release);
 		});
 

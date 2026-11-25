@@ -1,7 +1,10 @@
 export const FALLBACK_VERSION = "0.21.2";
 
-/** Cache successful release lookups for 12 hours. */
-export const CACHE_TTL = 43200;
+/**
+ * Cache successful release lookups for 10 minutes, so a new release is picked
+ * up shortly after it's published.
+ */
+export const CACHE_TTL = 600;
 
 const GITHUB_API_URL =
 	"https://api.github.com/repos/henrygd/beszel/releases/latest";
@@ -24,10 +27,8 @@ async function getLatestRelease(): Promise<string | null> {
 				accept: "application/vnd.github+json",
 				"user-agent": "get-beszel",
 			},
-			cf: {
-				cacheTtl: CACHE_TTL,
-				cacheKey: GITHUB_API_URL,
-			},
+			// No cf.cacheTtl here: the caches.default entry below is the only cache
+			// layer, so stacked TTLs can't keep an old release around for longer.
 		});
 		if (!response.ok) {
 			return null;
